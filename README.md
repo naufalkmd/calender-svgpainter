@@ -1,138 +1,127 @@
 # calender-svgpainter
 
-Paint a GitHub-style `53x7` contribution grid, generate a transparent SVG banner from it, and keep the generated assets up to date with GitHub Actions.
+Paint your own GitHub-style name banner visually, save it as `canvas.json`, and let GitHub Actions regenerate the banner for you.
 
-## What this repo contains
+## What this is for
 
-- `painter/helper.html`: browser-based painter UI
-- `painter/canvas.json`: source of truth for your painted design
-- `scripts/render_github_painter_canvas.ps1`: renderer that generates SVG assets
-- `.github/workflows/painter-banner.yml`: workflow that regenerates assets on push
-- `Assets/github-painter-preview.svg`: full grey-board preview
-- `Assets/github-painter-banner.svg`: cropped transparent export for README banners
+This repo is made for one simple flow:
 
-## Preview
+1. Open the visual painter
+2. Draw your name or word on the grid
+3. Save the new `canvas.json`
+4. Push it to GitHub
+5. Let the workflow generate the updated banner image
+6. Use that image in your profile README
 
-![Painter preview](./Assets/github-painter-preview.svg)
+You do not need to edit SVG files by hand.
 
-## Paint your own name
+## What you will use
 
-The board is always a fixed `53x7` grid:
+- `painter/helper.html`: the visual editor
+- `painter/canvas.json`: your saved drawing
+- `Assets/github-painter-preview.svg`: grey preview board
+- `Assets/github-painter-banner.svg`: transparent banner output
 
-- `53` columns = GitHub-style week columns
-- `7` rows = day rows
-- `.` = empty cell
-- `1`, `2`, `3`, `4` = green intensity levels
+## How to paint your own name
 
-Open [painter/helper.html](./painter/helper.html) in your browser and paint directly on the grid.
+Open [painter/helper.html](./painter/helper.html) in your browser.
 
-Controls:
+The board is a GitHub-style grid, so you can paint your text by eye just like a contribution graph.
 
-- Drag with mouse to paint
+### Controls
+
+- Drag with the mouse to paint
 - Right click to erase a cell
-- `space` = erase brush
-- `a` = level `1`
-- `s` = level `2`
-- `d` = level `3`
-- `f` = level `4`
-- `esc` = clear the board
+- `space` switches to erase
+- `a`, `s`, `d`, `f` switch between the 4 green levels
+- `esc` clears the whole board
 
-Helpful workflow for painting a name by eye:
+### Recommended way to draw letters
 
-1. Start with brush `4` for the main letter shapes.
-2. Use one empty column between letters so the text stays readable.
-3. Keep each letter inside a `5x7` or `4x7` block.
-4. Use `2` or `3` if you want slight shading, but keep the outline simple first.
-5. Use the grey preview board for spacing, not the transparent export.
+1. Start with the brightest green for the main letter shape.
+2. Leave at least one empty column between letters.
+3. Keep letters simple and blocky so they stay readable.
+4. Paint the shape first, then add darker shades only if you want extra depth.
+5. Use the preview board for spacing and alignment, not the transparent export.
 
-If you want to save your work from the helper:
+If you are drawing a short name, center it by leaving some empty columns on both sides.
+
+## How to save your drawing
+
+When your design looks right in the helper:
 
 1. Click `Download canvas.json ->`
-2. Replace `painter/canvas.json` with that file
+2. Replace the repo file at `painter/canvas.json` with the downloaded file
 3. Commit and push
 
 You can also:
 
 - click `Copy canvas JSON` and paste it into `painter/canvas.json`
-- click `Import canvas.json` to continue editing an existing design
+- click `Import canvas.json` to load a previous drawing back into the helper
+- click `Reload committed canvas` to load the version already in the repo
 
-## canvas.json format
+## How GitHub Actions works
 
-`painter/canvas.json` must stay in this shape:
+This repo already includes the workflow:
 
-```json
-{
-  "version": 1,
-  "repositoryUrl": "https://github.com/YOUR_USER/YOUR_REPO.git",
-  "year": 2026,
-  "columns": 53,
-  "rows": 7,
-  "grid": [
-    ".....................................................",
-    ".....................................................",
-    ".....................................................",
-    ".....................................................",
-    ".....................................................",
-    ".....................................................",
-    "....................................................."
-  ]
-}
-```
+- [painter-banner.yml](./.github/workflows/painter-banner.yml)
 
-Notes:
+After you push a new `painter/canvas.json`, GitHub Actions automatically:
 
-- The renderer enforces exactly `53` columns and `7` rows.
-- Any character other than `.1234` is normalized to `.`.
-- The `repositoryUrl` and `year` fields are metadata for the helper UI.
+1. reads your updated drawing
+2. regenerates the preview image
+3. regenerates the transparent banner image
+4. commits the new generated images back into the repo
 
-## GitHub Actions usage
+That means your only normal job is to update `painter/canvas.json`. The workflow handles the image generation for you.
 
-This repo includes [painter-banner.yml](./.github/workflows/painter-banner.yml).
+## Required GitHub setting
 
-It runs automatically when either of these files changes on `main`:
+Because the workflow commits generated files back into the repo, you need to enable write access for workflows:
 
-- `painter/canvas.json`
-- `scripts/render_github_painter_canvas.ps1`
+1. Open your repository on GitHub
+2. Go to `Settings`
+3. Go to `Actions`
+4. Open `General`
+5. Under `Workflow permissions`, choose `Read and write permissions`
+6. Save
 
-It can also be run manually from the GitHub Actions tab with `workflow_dispatch`.
+If you skip this, the workflow may run but it will not be able to push the updated banner files back to the repository.
 
-What the workflow does:
+## How to run the workflow
 
-1. Checks out the repo
-2. Runs `./scripts/render_github_painter_canvas.ps1`
-3. Regenerates:
-   - `Assets/github-painter-preview.svg`
-   - `Assets/github-painter-banner.svg`
-4. Commits the generated SVGs back to the repo
+### Automatic way
 
-### Required repo setting
+This is the normal flow:
 
-Because the workflow commits generated files back into the repository, set this once in GitHub:
+1. Change `painter/canvas.json`
+2. Commit and push to `main`
+3. GitHub Actions runs automatically
 
-1. `Settings`
-2. `Actions`
-3. `General`
-4. `Workflow permissions`
-5. Select `Read and write permissions`
+### Manual way
 
-Without that, the workflow will render locally in the job but fail to push the updated assets.
+If you want to rerun it manually:
 
-## Local rendering
+1. Open the repository on GitHub
+2. Go to `Actions`
+3. Select `GitHub Painter Banner`
+4. Click `Run workflow`
 
-If you want to regenerate assets locally instead of waiting for GitHub Actions:
+## Where the output goes
 
-```powershell
-pwsh -File .\scripts\render_github_painter_canvas.ps1
-```
-
-This writes:
+After the workflow finishes, these two files are updated:
 
 - `Assets/github-painter-preview.svg`
 - `Assets/github-painter-banner.svg`
 
-## Use the banner in a profile README
+Use them like this:
 
-Use the transparent export in your profile or project README:
+- `github-painter-preview.svg`: full grey-board preview, useful for checking layout
+- `github-painter-banner.svg`: transparent final banner for your README
+
+## How to use the banner in your README
+
+Use the transparent banner at the top of your profile or project README:
 
 ```html
 <p align="center">
@@ -140,14 +129,22 @@ Use the transparent export in your profile or project README:
 </p>
 ```
 
-If you want the full editing-style board instead, use `Assets/github-painter-preview.svg`.
+Replace `YOUR_USER` and `YOUR_REPO` with your real GitHub values.
 
-## Recommended editing flow
+## Typical workflow
 
 1. Open `painter/helper.html`
 2. Paint your name
-3. Download or copy the updated `canvas.json`
-4. Save it to `painter/canvas.json`
+3. Download `canvas.json`
+4. Replace `painter/canvas.json`
 5. Commit and push
-6. Wait for the `GitHub Painter Banner` workflow to finish
-7. Use the updated `Assets/github-painter-banner.svg` in your README
+6. Wait for `GitHub Painter Banner` to finish
+7. Use the generated banner in your README
+
+## Tips
+
+- Keep the letters wide and simple
+- Avoid packing too many words into one row
+- Use darker shades only as accents
+- Check the generated preview after each push
+- If the output looks off, repaint in the helper and push again
