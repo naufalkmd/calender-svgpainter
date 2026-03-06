@@ -13,14 +13,15 @@ This repo is made for one simple flow:
 5. Let the workflow generate the updated banner image
 6. Use that image in your profile README
 
-You do not need to edit SVG files by hand.
+You do not need to edit SVG or GIF files by hand.
 
 ## What you will use
 
 - `painter/helper.html`: the visual editor
 - `painter/canvas.json`: your saved drawing
 - `Assets/github-painter-preview.svg`: grey preview board
-- `Assets/github-painter-banner.svg`: transparent banner output
+- `Assets/github-painter-banner.svg`: transparent static banner
+- `Assets/github-painter-banner.gif`: animated glitch banner
 
 ## How to paint your own name
 
@@ -69,9 +70,10 @@ This repo already includes the workflow:
 After you push a new `painter/canvas.json`, GitHub Actions automatically:
 
 1. reads your updated drawing
-2. regenerates the preview image
-3. regenerates the transparent banner image
-4. commits the new generated images back into the repo
+2. regenerates the grey preview board
+3. regenerates the transparent static banner
+4. regenerates the animated glitch GIF banner
+5. commits the new generated assets back into the repo
 
 That means your only normal job is to update `painter/canvas.json`. The workflow handles the image generation for you.
 
@@ -109,27 +111,29 @@ If you want to rerun it manually:
 
 ## Where the output goes
 
-After the workflow finishes, these two files are updated:
+After the workflow finishes, these files are updated:
 
 - `Assets/github-painter-preview.svg`
 - `Assets/github-painter-banner.svg`
+- `Assets/github-painter-banner.gif`
 
 Use them like this:
 
 - `github-painter-preview.svg`: full grey-board preview, useful for checking layout
-- `github-painter-banner.svg`: transparent final banner for your README
+- `github-painter-banner.svg`: transparent static banner
+- `github-painter-banner.gif`: animated glitch banner for your README
 
 ## How to use the banner in your README
 
-Use the transparent banner at the top of your profile or project README:
+Use the animated GIF at the top of your profile or project README:
 
 ```html
 <p align="center">
-  <img src="https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/Assets/github-painter-banner.svg" alt="GitHub Painter banner" width="100%" />
+  <img src="https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/Assets/github-painter-banner.gif" alt="GitHub Painter banner" width="100%" />
 </p>
 ```
 
-Replace `YOUR_USER` and `YOUR_REPO` with your real GitHub values.
+If you want the non-animated version instead, use `Assets/github-painter-banner.svg`.
 
 ## Typical workflow
 
@@ -139,7 +143,7 @@ Replace `YOUR_USER` and `YOUR_REPO` with your real GitHub values.
 4. Replace `painter/canvas.json`
 5. Commit and push
 6. Wait for `GitHub Painter Banner` to finish
-7. Use the generated banner in your README
+7. Use the generated GIF banner in your README
 
 ## Tips
 
