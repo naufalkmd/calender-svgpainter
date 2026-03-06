@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Painter Helper</title>
+  <style>
+    :root {
+      --bg: #101010;
+      --panel: #171717;
+      --panel-2: #1f1f1f;
+      --line: #2a2a2a;
+      --text: #f5f7fa;
+      --muted: #9aa3ad;
+      --empty: #262626;
+      --c1: #0d4429;
+      --c2: #016c31;
+      --c3: #26a641;
+      --c4: #39d353;
+      --accent: #f6c343;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(57, 211, 83, 0.08), transparent 28%),
+        linear-gradient(180deg, #151515 0%, #101010 100%);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1800px;
+      margin: 0 auto;
+      padding: 24px 36px 48px;
+    }
+
+    .header {
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0 0 10px;
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      gap: 0;
+      margin: 22px 0 14px;
+      border: 1px solid var(--line);
+      background: rgba(19, 19, 19, 0.8);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+
+    .toolbar input,
+    .toolbar select {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 1rem;
+      padding: 16px 18px;
+      outline: none;
+      appearance: none;
+    }
+
+    .toolbar .field {
+      position: relative;
+      border-right: 1px solid var(--line);
+    }
+
+    .toolbar .year::after {
+      content: "▾";
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .board-shell {
+      padding: 10px;
+      border: 1px solid var(--line);
+      background: rgba(12, 12, 12, 0.8);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 12px 40px rgba(0, 0, 0, 0.25);
+      overflow-x: auto;
+    }
+
+    .board {
+      display: grid;
+      gap: 2px;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .cell {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 2px;
+      background: var(--empty);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.34);
+      cursor: crosshair;
+      padding: 0;
+    }
+
+    .cell:focus-visible {
+      outline: 2px solid #ffffff;
+      outline-offset: 1px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px 22px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .meta button,
+    .meta label {
+      color: inherit;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      padding: 0;
+      font: inherit;
+    }
+
+    .meta .accent {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .meta .green {
+      color: var(--c4);
+      font-weight: 600;
+    }
+
+    .palette {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 34px;
+      flex-wrap: wrap;
+    }
+
+    .swatch {
+      display: grid;
+      justify-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .swatch button {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 0;
+      background: var(--empty);
+      box-shadow: 0 0 0 2px transparent, inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+    }
+
+    .swatch[data-symbol="1"] button { background: var(--c1); }
+    .swatch[data-symbol="2"] button { background: var(--c2); }
+    .swatch[data-symbol="3"] button { background: var(--c3); }
+    .swatch[data-symbol="4"] button { background: var(--c4); }
+
+    .swatch.active button {
+      box-shadow: 0 0 0 3px #ffffff, inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+    }
+
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .status {
+      margin-top: 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+      min-height: 1.2em;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .page {
+        padding: 18px 14px 36px;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar .field {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .cell {
+        width: 24px;
+        height: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1>GitHub Painter Helper</h1>
+      <p>Paint on a fixed <code>53x7</code> GitHub-style board, save <code>painter/canvas.json</code>, then let GitHub Actions regenerate the banner assets.</p>
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <input id="repoUrl" type="text" spellcheck="false" placeholder="Repository URL" />
+      </div>
+      <div class="field year">
+        <select id="year"></select>
+      </div>
+    </div>
+
+    <div class="board-shell">
+      <div id="board" class="board" aria-label="Painter grid"></div>
+    </div>
+
+    <div class="meta">
+      <button id="clearButton" type="button">Clear board (esc)</button>
+      <button id="loadExampleButton" type="button">Reload committed canvas</button>
+      <label for="fileInput">Import canvas.json</label>
+      <button id="copyJsonButton" type="button">Copy canvas JSON</button>
+      <button id="downloadButton" type="button" class="green">Download canvas.json →</button>
+      <span class="accent">Commit <code>painter/canvas.json</code> to trigger the workflow</span>
+    </div>
+
+    <div class="palette" id="palette">
+      <div class="swatch" data-symbol=".">
+        <button type="button" aria-label="Erase"></button>
+        <div>space</div>
+      </div>
+      <div class="swatch" data-symbol="1">
+        <button type="button" aria-label="Darkest green"></button>
+        <div>a</div>
+      </div>
+      <div class="swatch" data-symbol="2">
+        <button type="button" aria-label="Dark green"></button>
+        <div>s</div>
+      </div>
+      <div class="swatch" data-symbol="3">
+        <button type="button" aria-label="Medium green"></button>
+        <div>d</div>
+      </div>
+      <div class="swatch" data-symbol="4">
+        <button type="button" aria-label="Bright green"></button>
+        <div>f</div>
+      </div>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="footer">
+      The preview always shows the full grey <code>53x7</code> board while editing. The export crops to the painted area and keeps the background transparent in <code>Assets/github-painter-banner.svg</code>.
+    </div>
+  </div>
+
+  <input id="fileInput" class="hidden" type="file" accept="application/json,.json" />
+
+  <script>
+    const FIXED_COLUMNS = 53;
+    const FIXED_ROWS = 7;
+
+    const DEFAULT_CANVAS = {
+      version: 1,
+      repositoryUrl: "https://github.com/naufalkmd/readme-name-paint.git",
+      year: 2026,
+      columns: FIXED_COLUMNS,
+      rows: FIXED_ROWS,
+      grid: [
+        ".........4...4..444..4...4.44444..444..4.............",
+        ".........44..4.4...4.4...4.4.....4...4.4.............",
+        ".........4.4.4.4...4.4...4.4.....4...4.4.............",
+        ".........4..44.44444.4...4.4444..44444.4.............",
+        ".........4...4.4...4.4...4.4.....4...4.4.............",
+        ".........4...4.4...4.4...4.4.....4...4.4.............",
+        ".........4...4.4...4..444..4.....4...4.44444........."
+      ]
+    };
+
+    const COLORS = {
+      ".": getComputedStyle(document.documentElement).getPropertyValue("--empty").trim(),
+      "1": getComputedStyle(document.documentElement).getPropertyValue("--c1").trim(),
+      "2": getComputedStyle(document.documentElement).getPropertyValue("--c2").trim(),
+      "3": getComputedStyle(document.documentElement).getPropertyValue("--c3").trim(),
+      "4": getComputedStyle(document.documentElement).getPropertyValue("--c4").trim()
+    };
+
+    const board = document.getElementById("board");
+    const repoUrlInput = document.getElementById("repoUrl");
+    const yearSelect = document.getElementById("year");
+    const status = document.getElementById("status");
+    const fileInput = document.getElementById("fileInput");
+    const swatches = Array.from(document.querySelectorAll(".swatch"));
+
+    let canvasState = structuredClone(DEFAULT_CANVAS);
+    let activeSymbol = "2";
+    let isPainting = false;
+
+    function buildYearOptions() {
+      const currentYear = new Date().getFullYear();
+      for (let year = currentYear + 1; year >= currentYear - 10; year -= 1) {
+        const option = document.createElement("option");
+        option.value = String(year);
+        option.textContent = String(year);
+        yearSelect.appendChild(option);
+      }
+    }
+
+    function normalizeCanvas(canvas) {
+      if (!canvas || !Array.isArray(canvas.grid) || canvas.grid.length === 0) {
+        return structuredClone(DEFAULT_CANVAS);
+      }
+
+      const normalizedGrid = [];
+      for (let rowIndex = 0; rowIndex < FIXED_ROWS; rowIndex += 1) {
+        const sourceRow = canvas.grid[rowIndex] ?? "";
+        const safeRow = String(sourceRow).replace(/[^.1234]/g, ".").slice(0, FIXED_COLUMNS).padEnd(FIXED_COLUMNS, ".");
+        normalizedGrid.push(safeRow);
+      }
+
+      return {
+        version: 1,
+        repositoryUrl: canvas.repositoryUrl || DEFAULT_CANVAS.repositoryUrl,
+        year: Number(canvas.year) || DEFAULT_CANVAS.year,
+        columns: FIXED_COLUMNS,
+        rows: FIXED_ROWS,
+        grid: normalizedGrid
+      };
+    }
+
+    function setStatus(message) {
+      status.textContent = message;
+    }
+
+    function persistLocalCopy() {
+      localStorage.setItem("github-painter-helper-canvas", JSON.stringify(canvasState));
+    }
+
+    function updateInputs() {
+      repoUrlInput.value = canvasState.repositoryUrl;
+      yearSelect.value = String(canvasState.year);
+    }
+
+    function renderBoard() {
+      const rows = canvasState.grid.length;
+      const columns = canvasState.grid[0].length;
+      board.innerHTML = "";
+      board.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+      canvasState.grid.forEach((row, rowIndex) => {
+        [...row].forEach((symbol, columnIndex) => {
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "cell";
+          cell.dataset.row = String(rowIndex);
+          cell.dataset.column = String(columnIndex);
+          cell.dataset.symbol = symbol;
+          cell.style.background = COLORS[symbol];
+          board.appendChild(cell);
+        });
+      });
+    }
+
+    function setActiveSymbol(symbol) {
+      activeSymbol = symbol;
+      swatches.forEach((swatch) => {
+        swatch.classList.toggle("active", swatch.dataset.symbol === symbol);
+      });
+      setStatus(`Brush set to "${symbol === "." ? "erase" : symbol}"`);
+    }
+
+    function paintCell(rowIndex, columnIndex, symbol) {
+      const row = canvasState.grid[rowIndex];
+      if (!row || row[columnIndex] === undefined) return;
+      if (row[columnIndex] === symbol) return;
+
+      canvasState.grid[rowIndex] = row.slice(0, columnIndex) + symbol + row.slice(columnIndex + 1);
+      const cell = board.querySelector(`[data-row="${rowIndex}"][data-column="${columnIndex}"]`);
+      if (cell) {
+        cell.dataset.symbol = symbol;
+        cell.style.background = COLORS[symbol];
+      }
+    }
+
+    function toJson() {
+      return JSON.stringify(canvasState, null, 2) + "\n";
+    }
+
+    async function copyJson() {
+      await navigator.clipboard.writeText(toJson());
+      setStatus("Copied canvas JSON to clipboard.");
+    }
+
+    function downloadJson() {
+      const blob = new Blob([toJson()], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "canvas.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setStatus("Downloaded canvas.json.");
+    }
+
+    async function loadCommittedCanvas() {
+      try {
+        const response = await fetch("./canvas.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("fetch failed");
+        canvasState = normalizeCanvas(await response.json());
+        updateInputs();
+        renderBoard();
+        persistLocalCopy();
+        setStatus("Loaded committed canvas.json.");
+      } catch {
+        setStatus("Could not fetch committed canvas.json from this page context. Using local state.");
+      }
+    }
+
+    function clearBoard() {
+      canvasState.grid = Array.from({ length: FIXED_ROWS }, () => ".".repeat(FIXED_COLUMNS));
+      renderBoard();
+      persistLocalCopy();
+      setStatus("Board cleared.");
+    }
+
+    function applyStoredCanvas() {
+      const stored = localStorage.getItem("github-painter-helper-canvas");
+      if (!stored) return false;
+      try {
+        canvasState = normalizeCanvas(JSON.parse(stored));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function wireEvents() {
+      board.addEventListener("pointerdown", (event) => {
+        const cell = event.target.closest(".cell");
+        if (!cell) return;
+        isPainting = true;
+        cell.setPointerCapture(event.pointerId);
+        paintCell(Number(cell.dataset.row), Number(cell.dataset.column), activeSymbol);
+        persistLocalCopy();
+      });
+
+      board.addEventListener("pointerenter", (event) => {
+        const cell = event.target.closest(".cell");
+        if (!cell || !isPainting) return;
+        paintCell(Number(cell.dataset.row), Number(cell.dataset.column), activeSymbol);
+      }, true);
+
+      window.addEventListener("pointerup", () => {
+        if (isPainting) {
+          isPainting = false;
+          persistLocalCopy();
+          setStatus("Canvas updated. Download or copy canvas.json when ready.");
+        }
+      });
+
+      board.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        const cell = event.target.closest(".cell");
+        if (!cell) return;
+        paintCell(Number(cell.dataset.row), Number(cell.dataset.column), ".");
+        persistLocalCopy();
+      });
+
+      repoUrlInput.addEventListener("change", () => {
+        canvasState.repositoryUrl = repoUrlInput.value.trim();
+        persistLocalCopy();
+      });
+
+      yearSelect.addEventListener("change", () => {
+        canvasState.year = Number(yearSelect.value);
+        persistLocalCopy();
+      });
+
+      document.getElementById("clearButton").addEventListener("click", clearBoard);
+      document.getElementById("loadExampleButton").addEventListener("click", loadCommittedCanvas);
+      document.getElementById("copyJsonButton").addEventListener("click", () => {
+        copyJson().catch(() => setStatus("Clipboard copy failed. Use download instead."));
+      });
+      document.getElementById("downloadButton").addEventListener("click", downloadJson);
+
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        canvasState = normalizeCanvas(JSON.parse(text));
+        updateInputs();
+        renderBoard();
+        persistLocalCopy();
+        setStatus(`Imported ${file.name}.`);
+      });
+
+      swatches.forEach((swatch) => {
+        swatch.querySelector("button").addEventListener("click", () => setActiveSymbol(swatch.dataset.symbol));
+      });
+
+      window.addEventListener("keydown", (event) => {
+        const key = event.key.toLowerCase();
+        if (key === "escape") {
+          clearBoard();
+          return;
+        }
+
+        const bindings = {
+          " ": ".",
+          "a": "1",
+          "s": "2",
+          "d": "3",
+          "f": "4"
+        };
+
+        if (bindings[key] !== undefined) {
+          event.preventDefault();
+          setActiveSymbol(bindings[key]);
+        }
+      });
+    }
+
+    buildYearOptions();
+    const restoredLocalCanvas = applyStoredCanvas();
+    if (!restoredLocalCanvas) {
+      canvasState = structuredClone(DEFAULT_CANVAS);
+    }
+    updateInputs();
+    renderBoard();
+    setActiveSymbol("2");
+    wireEvents();
+    if (!restoredLocalCanvas) {
+      loadCommittedCanvas();
+    } else {
+      setStatus("Restored your local unsaved canvas from browser storage.");
+    }
+  </script>
+</body>
+</html>
