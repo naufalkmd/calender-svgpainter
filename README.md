@@ -2,7 +2,7 @@
 
 Paint your own GitHub-style name banner visually, save it as `canvas.json`, and let GitHub Actions regenerate the banner for you.
 
-![GitHub Painter Banner](https://github.com/naufalkmd/calender-svgpainter/raw/main/assets/github-painter-banner.gif)
+![GitHub Painter Banner](https://github.com/naufalkmd/calender-svgpainter/raw/main/Assets/github-painter-banner.gif)
 
 ## What this is for
 
